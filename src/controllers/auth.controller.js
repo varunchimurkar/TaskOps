@@ -1,5 +1,6 @@
 import { asyncHandler } from "../utils/async-handler.js";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 import { User } from "../models/user.models.js";
 import { sendMail, emailVerificationMailgGenContent } from "../utils/mail.js";
@@ -27,7 +28,7 @@ const registerUser = asyncHandler(async (req, res) => {
     email,
     username,
     password,
-    fullname
+    fullname,
   });
 
   if (!user) {
@@ -64,7 +65,7 @@ const registerUser = asyncHandler(async (req, res) => {
       id: user._id,
       email: user.email,
       username: user.username,
-      fullname: user.fullname
+      fullname: user.fullname,
     },
   });
 });
@@ -83,13 +84,12 @@ const verifyEmail = asyncHandler(async (req, res) => {
       emailVerificationToken: token,
     });
 
-
     user.isEmailVerified = true;
     user.emailVerificationToken = undefined;
     await user.save();
 
     res.status(200).json({
-      message: "Email verified successfully",
+      message: "Email verified successfully ✅",
       success: true,
     });
   } catch (error) {
@@ -102,7 +102,59 @@ const verifyEmail = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-  const { email, username, password, role } = req.body;
+  const { email, username, password } = req.body;
+
+  if (!email || !username || !password) {
+    res.status(400).json({
+      message: "All field required",
+    });
+  }
+
+  try {
+    const user = await User.findOne({
+      email,
+    });
+
+    if (!user) {
+      res.status(400).json({
+        message: "Invalid Email or username or Password",
+      });
+    }
+
+    const isMatch = await user.isPasswordCorrect(password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    if (!user.isEmailVerified) {
+      return res.status(403).json({
+        message: "Please verify your email before logging in",
+      });
+    }
+
+   const accessToken = user.generateAccessToken()
+   const refreshToken = user.generateRefreshToken()
+
+
+   user.refreshToken = refreshToken
+   await user.save()
+
+   res.status(200).json({
+    message : "Login Successful ✅",
+    success : true,
+    accessToken,
+    refreshToken
+   })
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -116,6 +168,7 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
 
   //validation
 });
+
 const resetForgottenPassword = asyncHandler(async (req, res) => {
   const { email, username, password, role } = req.body;
 
