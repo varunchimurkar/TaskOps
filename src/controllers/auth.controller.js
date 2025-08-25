@@ -83,6 +83,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
       emailVerificationToken: token,
     });
 
+
     user.isEmailVerified = true;
     user.emailVerificationToken = undefined;
     await user.save();
