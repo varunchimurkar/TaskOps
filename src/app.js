@@ -2,8 +2,14 @@ import express from "express";
 
 const app = express();
 
-import healthCheckRouter from "./routes/healthcheck.routes.js"
+app.use(express.json());
 
-app.use("/api/v1/healthcheck", healthCheckRouter)
+import healthCheckRouter from "./routes/healthcheck.routes.js";
+
+import verifyEmail from "./routes/auth.routes.js";
+
+app.use("/api/v1/healthcheck", healthCheckRouter);
+
+app.use("/api/v1/users", verifyEmail);
 
 export default app;

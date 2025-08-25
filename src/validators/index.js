@@ -1,30 +1,29 @@
-import {body} from "express-validator"
+import { body } from "express-validator";
 
-const userRegistrationValidator = () => {
-    return [
-        body('email')
-        .trim()
-        .notEmpty().withMessage("Email is required")
-        .isEmail().withMessage("Email is invalid"),
+export const userRegistrationValidator = () => [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Email is invalid"),
 
-        body('username')
-        .trim()
-        .notEmpty().withMessage("Username is required")
-        .isEmail().withMessage("Username is invalid")
-        .isLength({min :3}).withMessage("username should be at least 3 char")
-        .isLength({max: 15}).withMessage("username cannot exceed 13 char"),
+  body("username")
+    .trim()
+    .notEmpty()
+    .withMessage("Username is required")
+    .isLength({ min: 3 })
+    .withMessage("Username must be at least 3 characters long")
+    .matches(/^[a-z0-9_]+$/)
+    .withMessage(
+      "Username must be lowercase letters, numbers, underscores only",
+    ),
 
+  body("password").trim().notEmpty().withMessage("Password is required"),
 
-    ]
-}
-
-const userLoginValidator = () => {
-    return [
-        body('email')
-        .isEmail().withMessage("Email is not valid"),
-        body('password')
-        .notEmpty().withMessage('Password cannot be empty')
-    ]
-}
-
-export { userLoginValidator, userRegistrationValidator}
+  body("fullname")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Full name cannot be empty if provided"),
+];

@@ -1,7 +1,7 @@
-import mailgen from "mailgen";
+import Mailgen from "mailgen";
 import nodemailer from "nodemailer";
 
-const sendMail = async (Options) => {
+export const sendMail = async (Options) => {
   const mailGenerator = new Mailgen({
     theme: "default",
     product: {
@@ -10,39 +10,35 @@ const sendMail = async (Options) => {
     },
   });
 
-   const transporter = nodemailer.createTransport({
-      host: process.env.MAILTRAP_HOST,
-      port: process.env.MAILTRAP_PORT,
-      secure: false,
-      auth: {
-        user: process.env.MAILTRAP_USERNAME,
-        pass: process.env.MAILTRAP_PASSWORD,
-      },
-    })
-
-    const mail = {
-
-      from: "mail.taskmanager@example.com",
-      to: Options.email,
-      subject: Options.subject,
-      text: emailText,
-      html: emailHtml 
-    
-
-    }
-
-    try{
-        await transporter.sendMail(mail)
-    }catch(error){
-        console.error("Email Failed", error)
-    }
+  const transporter = nodemailer.createTransport({
+    host: process.env.MAILTRAP_HOST,
+    port: process.env.MAILTRAP_PORT,
+    secure: false,
+    auth: {
+      user: process.env.MAILTRAP_USERNAME,
+      pass: process.env.MAILTRAP_PASSWORD,
+    },
+  });
 
   const emailText = mailGenerator.generatePlaintext(Options.mailGenerator);
-  const emailBody = mailGenerator.generate(Options.mailGenerator);
+  const emailHtml = mailGenerator.generate(Options.mailGenerator);
+  const mail = {
+    from: "mail.taskmanager@example.com",
+    to: Options.email,
+    subject: Options.subject,
+    text: emailText,
+    html: emailHtml,
+  };
+
+  try {
+    await transporter.sendMail(mail);
+  } catch (error) {
+    console.error("Email Failed", error);
+  }
 };
 
 //factory function
-const emailVerificationMailgGenContent = (username, verificationUrl) => {
+export const emailVerificationMailgGenContent = (username, verificationUrl) => {
   return {
     body: {
       name: username,
@@ -61,7 +57,7 @@ const emailVerificationMailgGenContent = (username, verificationUrl) => {
   };
 };
 
-const forgetPasswordMailgGenContent = (username, passwordResetUrl) => {
+export const forgetPasswordMailgGenContent = (username, passwordResetUrl) => {
   return {
     body: {
       name: username,
@@ -79,4 +75,3 @@ const forgetPasswordMailgGenContent = (username, passwordResetUrl) => {
     },
   };
 };
-
