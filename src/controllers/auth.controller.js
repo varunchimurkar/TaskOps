@@ -106,7 +106,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
       success: true,
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(403).json({
       message: "Email not verified",
       error,
       success: false,
@@ -118,7 +118,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
 
   if (!email || !username || !password) {
-    res.status(400).json({
+  return res.status(400).json({
       message: "All field required",
     });
   }
@@ -126,10 +126,11 @@ const loginUser = asyncHandler(async (req, res) => {
   try {
     const user = await User.findOne({
       email,
+      username
     });
 
     if (!user) {
-      res.status(400).json({
+    return res.status(400).json({
         message: "Invalid Email or username or Password",
       });
     }
