@@ -57,6 +57,7 @@ export const emailVerificationMailgGenContent = (username, verificationUrl) => {
   };
 };
 
+
 export const forgetPasswordMailgGenContent = (username, passwordResetUrl) => {
   return {
     body: {

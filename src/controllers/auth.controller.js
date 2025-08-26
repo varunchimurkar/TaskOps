@@ -88,7 +88,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
       emailVerificationToken: hashedToken,
       emailVerificationExpiry: { $gt: Date.now() },
     });
-   
+
     if (!user) {
       return res.status(400).json({
         message: "Token invalid or expired ❌",
@@ -118,7 +118,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
 
   if (!email || !username || !password) {
-  return res.status(400).json({
+    return res.status(400).json({
       message: "All field required",
     });
   }
@@ -126,11 +126,11 @@ const loginUser = asyncHandler(async (req, res) => {
   try {
     const user = await User.findOne({
       email,
-      username
+      username,
     });
 
     if (!user) {
-    return res.status(400).json({
+      return res.status(400).json({
         message: "Invalid Email or username or Password",
       });
     }
@@ -176,9 +176,57 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 const resendEmailVerification = asyncHandler(async (req, res) => {
-  const { email, username, password, role } = req.body;
+  const { email } = req.body;
 
-  //validation
+  if (!email) {
+   return res.status(400).json({
+      success: false,
+      message: "Email is required ❌",
+    });
+  }
+
+  const user = await User.findOne({
+    email,
+  });
+
+  if (!user) {
+   return res.status(400).json({
+      success: false,
+      message: "User not found ❌",
+    });
+  }
+
+  if (user.isEmailVerified) {
+  return res.status(200).json({
+      success: true,
+      message: "Email Already Verified ✅",
+    });
+  }
+
+  const { hashedToken, unHashedToken, tokenExpiry } = user.generateTemporaryToken();
+  
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpiry = tokenExpiry;
+  await user.save();
+
+  const verificationUrl = `${process.env.BASE_URL}/api/v1/users/verify/${unHashedToken}`;
+
+  const mailContent = emailVerificationMailgGenContent(
+    user.email,
+    verificationUrl,
+  );
+
+  await sendMail({
+    email: user.email,
+    subject: "Verification email resent ✅",
+    mailGenerator: mailContent,
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Verification email resent successfully ✅",
+    verificationUrl,
+  });
 });
 
 const resetForgottenPassword = asyncHandler(async (req, res) => {

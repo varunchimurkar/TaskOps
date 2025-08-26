@@ -99,4 +99,4 @@ const deleteNote = async (req, res) => {
     .json(new ApiResponse(200, note, "Notes deleted successfully"));
 };
 
-export { getNotes, getNoteById, createNote };
+export { getNotes, getNoteById, createNote, updateNote, deleteNote };
