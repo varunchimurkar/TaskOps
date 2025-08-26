@@ -38,13 +38,15 @@ const registerUser = asyncHandler(async (req, res) => {
     });
   }
 
-  const token = crypto.randomBytes(32).toString("hex");
+  const { hashedToken, unHashedToken, tokenExpiry } =
+    user.generateTemporaryToken();
 
-  user.emailVerificationToken = token;
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpiry = tokenExpiry;
 
   await user.save();
 
-  const verificationUrl = `${process.env.BASE_URL}/api/v1/users/verify/${token}`;
+  const verificationUrl = `${process.env.BASE_URL}/api/v1/users/verify/${unHashedToken}`;
 
   const mailContent = emailVerificationMailgGenContent(
     user.username,
@@ -79,13 +81,24 @@ const verifyEmail = asyncHandler(async (req, res) => {
     });
   }
 
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
   try {
     const user = await User.findOne({
-      emailVerificationToken: token,
+      emailVerificationToken: hashedToken,
+      emailVerificationExpiry: { $gt: Date.now() },
     });
+   
+    if (!user) {
+      return res.status(400).json({
+        message: "Token invalid or expired ❌",
+        success: false,
+      });
+    }
 
     user.isEmailVerified = true;
     user.emailVerificationToken = undefined;
+    user.emailVerificationExpiry = undefined;
     await user.save();
 
     res.status(200).json({
@@ -135,20 +148,18 @@ const loginUser = asyncHandler(async (req, res) => {
       });
     }
 
-   const accessToken = user.generateAccessToken()
-   const refreshToken = user.generateRefreshToken()
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
 
+    user.refreshToken = refreshToken;
+    await user.save();
 
-   user.refreshToken = refreshToken
-   await user.save()
-
-   res.status(200).json({
-    message : "Login Successful ✅",
-    success : true,
-    accessToken,
-    refreshToken
-   })
-
+    res.status(200).json({
+      message: "Login Successful ✅",
+      success: true,
+      accessToken,
+      refreshToken,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
